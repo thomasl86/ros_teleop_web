@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+  <meta charset="utf-8" />
+  <body>
+    <h1>Keyboard teleoperation of Marvin.</h1>
+
+    <canvas id="canvas" width="600" height="600"
+        style="border:solid black 1px;">
+      Your browser does not support canvas element.
+    </canvas>
+    <br>
+    <button onclick="startup()"
+        style="height:50px;width:80px">Initialize</button>
+    <br>
+    Log: <pre id="log" width="600" style="border: 1px solid #ccc;"></pre>
+    <br>
+    Current speed (linear):
+        <pre id="speedLinear" width="600" style="border: 1px solid #ccc;"></pre>
+    <br>
+    Current speed (angular):
+        <pre id="speedAngular"
+            width="600" style="border: 1px solid #ccc;"></pre>
+
+    <div id="connectionIndicator">
+      ROS status:
+      <p id="connecting">
+        Connecting to rosbridge...
+      </p>
+      <p id="connected" style="color:#00D600; display:none">
+        Connected
+      </p>
+      <p id="error" style="color:#FF0000; display:none">
+        Error in the backend!
+      </p>
+      <p id="closed" style="display:none">
+        Connection closed.
+      </p>
+    </div>
+    <br>
+    Debug: <pre id="debug" width="600" style="border: 1px solid #ccc;"></pre>
+    <br>
+  </body>
+
+  <!--<script type="text/javascript" src=
+      "http://cdn.robotwebtools.org/EventEmitter2/current/eventemitter2.min.js">
+  </script>
+  <script type="text/javascript"
+      src="http://cdn.robotwebtools.org/roslibjs/current/roslib.min.js">
+  </script>-->
+  <script type="text/javascript" src="../lib/eventemitter2.js">
+  </script>
+  <script type="text/javascript" src="../lib/roslib.min.js">
+  </script>
+
+  <script type="text/javascript">
+
+    // User interface
+    // -----------------
+    // --- Inits
+    var ongoingTouches = [];
+    var ongoingCircles = [];
+    var canvas = document.getElementById("canvas");
+    var canvasWidth = canvas.getAttribute("width");
+    var canvasHeight = canvas.getAttribute("height");
+    var el = document.getElementsByTagName("canvas")[0];
+    var ctx = el.getContext("2d");
+
+    // --- Draw a red dot marking canvas center (zero velocity)
+    ctx.beginPath();
+    ctx.arc(canvasHeight/2, canvasWidth/2, 16, 0, 2 * Math.PI, false);
+    ctx.fillStyle = "#ff6347";
+    ctx.fill();
+
+    // ROS
+    // -----------------
+    var ros = new ROSLIB.Ros({
+      url : 'ws://192.168.1.72:9090'
+    });
+
+    // --- Error handling
+    // --- If there is an error on the backend, an 'error' emit will be emitted.
+    ros.on('error', function(error) {
+      console.log('Error connecting to websocket server: ', error);
+      document.getElementById('connecting').style.display = 'none';
+      document.getElementById('connected').style.display = 'none';
+      document.getElementById('closed').style.display = 'none';
+      document.getElementById('error').style.display = 'inline';
+    });
+    // --- Find out exactly when we made a connection.
+    ros.on('connection', function() {
+      console.log('Connected to websocket server.');
+      document.getElementById('connecting').style.display = 'none';
+      document.getElementById('error').style.display = 'none';
+      document.getElementById('closed').style.display = 'none';
+      document.getElementById('connected').style.display = 'inline';
+    });
+    ros.on('close', function() {
+      console.log('Connection to websocket server closed.');
+      document.getElementById('connecting').style.display = 'none';
+      document.getElementById('connected').style.display = 'none';
+      document.getElementById('closed').style.display = 'inline';
+    });
+
+    // --- Publishing a Topic
+    var cmdVel = new ROSLIB.Topic({
+      ros : ros,
+      name : '/cmd_vel',
+      messageType : 'geometry_msgs/Twist'
+    });
+
+    var twist = new ROSLIB.Message({
+      linear : {
+        x : 0,
+        y : 0,
+        z : 0
+      },
+      angular : {
+        x : 0,
+        y : 0,
+        z : 0
+      }
+    });
+
+    // --- Continuously publish twist message at 20Hz
+    var tid = setInterval(publishTwistMsg, 50);
+    function publishTwistMsg(){
+      cmdVel.publish(twist);
+    }
+
+    // --- Initialize the touch listeners
+    function startup() {
+      var el = document.getElementsByTagName("canvas")[0];
+      el.addEventListener("touchstart", handleStart, false);
+      el.addEventListener("touchend", handleEnd, false);
+      el.addEventListener("touchcancel", handleCancel, false);
+      el.addEventListener("touchmove", handleMove, false);
+      printLog("initialized.");
+    }
+    // --- Handling touches
+    function handleStart(evt) {
+      evt.preventDefault();
+      var touches = evt.changedTouches;
+      ongoingTouches.push(copyTouch(touches[0]));
+      // Set the twist
+      //setTwist(touches[i].pageX, touches[i].pageY);
+      touchPos = getTouchPos(canvas, touches[0]);
+      setTwist(touchPos);
+      printLog("touchstart.");
+    }
+    function handleMove(evt) {
+      evt.preventDefault();
+      var touches = evt.changedTouches;
+      var i = 0;
+      touchPos = getTouchPos(canvas, touches[0]);
+      setTwist(touchPos);
+      //setTwist(touches[i].pageX, touches[i].pageY);
+    }
+    function handleEnd(evt) {
+      evt.preventDefault();
+      var ctx = el.getContext("2d");
+      var touches = evt.changedTouches;
+      ongoingTouches.splice(0, 1);  // remove it; we're done
+      //touchPos = getTouchPos(canvas, touches[0]);
+      touchPos = {
+        x : canvasHeight/2,
+        y : canvasWidth/2
+      };
+      setTwist(touchPos);
+      printLog("touchend");
+      //setTwist(canvasHeight/2, canvasWidth/2);
+    }
+    function handleCancel(evt) {
+      evt.preventDefault();
+      var ctx = el.getContext("2d");
+      var touches = evt.changedTouches;
+      ongoingTouches.splice(idx, 1);  // remove it; we're done
+      //setTwist(canvasHeight/2, canvasWidth/2);
+      //touchPos = getTouchPos(canvas, touches[0]);
+      touchPos = {
+        x : canvasHeight/2,
+        y : canvasWidth/2
+      };
+      setTwist(touchPos);
+      printLog("touchcancel.");
+    }
+    function copyTouch(touch) {
+      return {
+        identifier: touch.identifier,
+        pageX: touch.pageX,
+        pageY: touch.pageY
+      };
+    }
+
+    // --- Get the position of the mouse relative to the canvas
+    // TODO Use this function in above touch handler functions
+    function getTouchPos(canvas, touch) {
+      var rect = canvas.getBoundingClientRect();
+      //printDebug("rect = "+rect);
+      return {
+        x: touch.pageX - rect.left,
+        y: touch.pageY - rect.top
+      };
+    }
+
+    function setTwist(touchPos){
+      pageX = touchPos.x;
+      pageY = touchPos.y;
+      //printDebug("touchX: "+pageX+", touchY: "+pageX);
+      var twistLinMulti = 0.5;
+      var twistAngMulti = 4;
+      var relLocationX = (canvasHeight/2 - pageX)/(canvasHeight/2);
+      var relLocationY = (canvasWidth/2 - pageY)/(canvasWidth/2);
+      if (relLocationX > 1) relLocationX = 1;
+      if (relLocationX < -1) relLocationX = -1;
+      if (relLocationY > 1) relLocationY = 1;
+      if (relLocationY < -1) relLocationY = -1;
+
+      var twistLinear = relLocationY*twistLinMulti;
+      var twistAngular = relLocationX*twistAngMulti;
+      twist.linear.x = twistLinear;
+      twist.angular.z = twistAngular;
+
+      printLog("X: "+relLocationX+", Y: "+relLocationY);
+      printSpeed(twistLinear, twistAngular);
+    }
+    function fcnFasterBtn() {
+      twistXValue = twistXValue*1.1;
+      twistZValue = twistZValue*1.1;
+      document.getElementById("speedIndicator").innerHTML
+          = "Current speed: "
+            +twistXValue.toFixed(2)+" (linear), "
+            +twistZValue.toFixed(2)+" (angular).";
+    }
+    function fcnSlowerBtn() {
+      twistXValue = twistXValue*0.9;
+      twistZValue = twistZValue*0.9;
+      document.getElementById("speedIndicator").innerHTML
+          = "Current speed: "
+            +twistXValue.toFixed(2)+" (linear), "
+            +twistZValue.toFixed(2)+" (angular).";
+    }
+
+    // Logging & printing
+    // -----------------
+    function printSpeed(speedLinar, speedAngular) {
+      var pSpeedLinear = document.getElementById('speedLinar');
+      var pSpeedAngular = document.getElementById('speedAngular');
+        pSpeedLinear.innerHTML = speedLinear;
+        pSpeedAngular.innerHTML = speedAngular;
+    }
+    function printLog(msg) {
+      var p = document.getElementById('log');
+        p.innerHTML = msg;
+    }
+    function printDebug(msg) {
+      var p = document.getElementById('debug');
+        p.innerHTML = p.innerHTML+msg+"\n";
+    }
+  </script>
+</html>
