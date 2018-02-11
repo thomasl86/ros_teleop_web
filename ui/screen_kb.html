@@ -62,6 +62,9 @@
     const KEY_SR = "53";
 
     var keydownEvents = [];
+    var twist = [];
+    var twistXValue = 0.5;
+    var twistZValue = 4;
     var charfield = document.getElementById("char");
     charfield.addEventListener('keydown', handleKeydown, false);
     charfield.addEventListener('keyup', handleKeyup, false);
@@ -113,7 +116,7 @@
         messageType : 'geometry_msgs/Twist'
       });
 
-      var twist = new ROSLIB.Message({
+      twist = new ROSLIB.Message({
         linear : {
           x : 0,
           y : 0,
@@ -127,8 +130,6 @@
       });
 
       // --- Setup default liear and angular speed
-      var twistXValue = 0.5;
-      var twistZValue = 4;
       document.getElementById("speedIndicator").innerHTML
           = "Current speed: "
             +twistXValue+" (linear), "+twistZValue+" (angular).";
@@ -137,6 +138,7 @@
       var tid = setInterval(publishTwistMsg, 50);
       function publishTwistMsg(){
         cmdVel.publish(twist);
+        console.log("\nMsg published.");
       }
     }
 

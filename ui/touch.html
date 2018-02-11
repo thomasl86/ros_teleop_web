@@ -64,6 +64,9 @@
     // --- Inits
     var ongoingTouches = [];
     var ongoingCircles = [];
+    var twist = [];
+    var twistLinMulti = 0.5;
+    var twistAngMulti = 4;
     var canvas = document.getElementById("canvas");
     var canvasWidth = canvas.getAttribute("width");
     var canvasHeight = canvas.getAttribute("height");
@@ -114,7 +117,7 @@
         messageType : 'geometry_msgs/Twist'
       });
 
-      var twist = new ROSLIB.Message({
+      twist = new ROSLIB.Message({
         linear : {
           x : 0,
           y : 0,
@@ -214,8 +217,6 @@
       pageX = touchPos.x;
       pageY = touchPos.y;
       //printDebug("touchX: "+pageX+", touchY: "+pageX);
-      var twistLinMulti = 0.5;
-      var twistAngMulti = 4;
       var relLocationX = (canvasHeight/2 - pageX)/(canvasHeight/2);
       var relLocationY = (canvasWidth/2 - pageY)/(canvasWidth/2);
       if (relLocationX > 1) relLocationX = 1;
