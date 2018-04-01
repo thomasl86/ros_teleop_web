@@ -46,19 +46,18 @@
     <br>
   </body>
 
-  <!--<script type="text/javascript" src=
-      "http://cdn.robotwebtools.org/EventEmitter2/current/eventemitter2.min.js">
+  <script type="text/javascript"
+      src="https://static.robotwebtools.org/EventEmitter2/current/eventemitter2.min.js">
   </script>
   <script type="text/javascript"
-      src="http://cdn.robotwebtools.org/roslibjs/current/roslib.min.js">
-  </script>-->
-  <script type="text/javascript" src="../lib/eventemitter2.js">
+      src="https://static.robotwebtools.org/roslibjs/current/roslib.min.js">
+  </script>
+  <!--<script type="text/javascript" src="../lib/eventemitter2.js">
   </script>
   <script type="text/javascript" src="../lib/roslib.min.js">
-  </script>
+  </script>-->
 
   <script type="text/javascript">
-
     // User interface
     // -----------------
     // --- Inits
@@ -153,7 +152,6 @@
       var touches = evt.changedTouches;
       ongoingTouches.push(copyTouch(touches[0]));
       // Set the twist
-      //setTwist(touches[i].pageX, touches[i].pageY);
       touchPos = getTouchPos(canvas, touches[0]);
       setTwist(touchPos);
       printLog("touchstart.");
@@ -164,29 +162,24 @@
       var i = 0;
       touchPos = getTouchPos(canvas, touches[0]);
       setTwist(touchPos);
-      //setTwist(touches[i].pageX, touches[i].pageY);
     }
     function handleEnd(evt) {
       evt.preventDefault();
       var ctx = el.getContext("2d");
       var touches = evt.changedTouches;
       ongoingTouches.splice(0, 1);  // remove it; we're done
-      //touchPos = getTouchPos(canvas, touches[0]);
       touchPos = {
         x : canvasHeight/2,
         y : canvasWidth/2
       };
       setTwist(touchPos);
       printLog("touchend");
-      //setTwist(canvasHeight/2, canvasWidth/2);
     }
     function handleCancel(evt) {
       evt.preventDefault();
       var ctx = el.getContext("2d");
       var touches = evt.changedTouches;
       ongoingTouches.splice(idx, 1);  // remove it; we're done
-      //setTwist(canvasHeight/2, canvasWidth/2);
-      //touchPos = getTouchPos(canvas, touches[0]);
       touchPos = {
         x : canvasHeight/2,
         y : canvasWidth/2
