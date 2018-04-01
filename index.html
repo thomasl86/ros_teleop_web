@@ -23,11 +23,12 @@
         window.location="ui/touch.html";
       }
       else {
+        // TODO make choice of screen_kb or screen_kb_vid via query string
         if (getQueryVariable('method')=='btn') {
           window.location="ui/screen_btn.html";
         }
         else if (getQueryVariable('method')=='kb') {
-          window.location="ui/screen_kb.html";
+          window.location="ui/screen_kb_vid.html";
         }
         else {
           window.location="ui/screen_btn.html";
