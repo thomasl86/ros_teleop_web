@@ -9,14 +9,36 @@
     </form>
     <button id="btnInit">INIT</button>
     <br>
-    <button id="btnUp">UP</button>
-    <button id="btnDn">DOWN</button>
-    <button id="btnLt">LEFT</button>
-    <button id="btnRt">RIGHT</button>
+    <table>
+      <tr>
+        <th></th>
+        <th><button id="btnFwd">FORWARD</button></th>
+        <th></th>
+      </tr>
+      <tr>
+        <th><button id="btnFwdLt">FWD LEFT</button></th>
+        <th></th>
+        <th><button id="btnFwdRt">FWD RIGHT</button></th>
+      </tr>
+      <tr>
+        <th><button id="btnTnLt">TURN LEFT</button></th>
+        <th></th>
+        <th><button id="btnTnRt">TURN RIGHT</button></th>
+      </tr>
+      <tr>
+        <th><button id="btnBwdLt">BWD LEFT</button></th>
+        <th></th>
+        <th><button id="btnBwdRt">BWD RIGHT</button></th>
+      </tr>
+      <tr>
+        <th></th>
+        <th><button id="btnBwd">BACKWARD</button></th>
+        <th></th>
+      </tr>
+    </table>
+    <br>
     <button id="btnFst">FASTER</button>
     <button id="btnSlw">SLOWER</button>
-    <div id="statusIndicator">
-    </div>
     <div id="speedIndicator">
     </div>
     <div id="connectionIndicator">
@@ -34,7 +56,7 @@
       </p>
     </div>
     <br>
-    Log: <pre id="log" style="border: 1px solid #ccc;"></pre>
+    Log: <pre id="log"></pre><!-- style="border: 1px solid #ccc;"-->
     <div id="log">
     </div>
   </body>
@@ -43,61 +65,50 @@
   <script type="text/javascript"
       src="https://static.robotwebtools.org/roslibjs/current/roslib.min.js"></script>
   <script type="text/javascript" src="../scripts/isMobile.js"></script>
-  <script type="text/javascript" src="scripts/handleTouchEvents.js"></script>
 
   <script type="text/javascript" type="text/javascript">
-    if( isMobile.any() ) {
-      document.getElementById("statusIndicator").innerHTML
-          = "Mobile browser.";
-      document.getElementById("btnUp").addEventListener(
-          "touchstart",fcnPressedUp);
-      document.getElementById("btnDn").addEventListener(
-          "touchstart", fcnPressedDn);
-      document.getElementById("btnLt").addEventListener(
-          "touchstart", fcnPressedLt);
-      document.getElementById("btnRt").addEventListener(
-          "touchstart", fcnPressedRt);
-      document.getElementById("btnUp").addEventListener(
-          "touchend", fcnReleasedBtn);
-      document.getElementById("btnDn").addEventListener(
-          "touchend", fcnReleasedBtn);
-      document.getElementById("btnLt").addEventListener(
-          "touchend", fcnReleasedBtn);
-      document.getElementById("btnRt").addEventListener(
-          "touchend", fcnReleasedBtn);
-      document.getElementById("btnFst").addEventListener(
-          "touchstart", fcnFasterBtn);
-      document.getElementById("btnSlw").addEventListener(
-          "touchstart", fcnSlowerBtn);
-      document.getElementById("btnInit").addEventListener(
-          "click", run);
-    }
-    else{
-      document.getElementById("statusIndicator").innerHTML
-          = "Not a mobile browser.";
-      document.getElementById("btnUp").addEventListener(
-          "mousedown",fcnPressedUp);
-      document.getElementById("btnDn").addEventListener(
-          "mousedown", fcnPressedDn);
-      document.getElementById("btnLt").addEventListener(
-          "mousedown",fcnPressedLt);
-      document.getElementById("btnRt").addEventListener(
-          "mousedown", fcnPressedRt);
-      document.getElementById("btnUp").addEventListener(
-          "mouseup", fcnReleasedBtn);
-      document.getElementById("btnDn").addEventListener(
-          "mouseup", fcnReleasedBtn);
-      document.getElementById("btnLt").addEventListener(
-          "mouseup", fcnReleasedBtn);
-      document.getElementById("btnRt").addEventListener(
-          "mouseup", fcnReleasedBtn);
-      document.getElementById("btnFst").addEventListener(
-          "click", fcnFasterBtn);
-      document.getElementById("btnSlw").addEventListener(
-          "click", fcnSlowerBtn);
-      document.getElementById("btnInit").addEventListener(
-          "click", run);
-    }
+
+    // Button pressed handling
+    document.getElementById("btnFwd").addEventListener(
+        "mousedown",fcnPressedFwd);
+    document.getElementById("btnBwd").addEventListener(
+        "mousedown", fcnPressedBwd);
+    document.getElementById("btnFwdLt").addEventListener(
+        "mousedown",fcnPressedFwdLt);
+    document.getElementById("btnFwdRt").addEventListener(
+        "mousedown", fcnPressedFwdRt);
+    document.getElementById("btnTnLt").addEventListener(
+        "mousedown",fcnPressedTnLt);
+    document.getElementById("btnTnRt").addEventListener(
+        "mousedown", fcnPressedTnRt);
+    document.getElementById("btnBwdLt").addEventListener(
+        "mousedown",fcnPressedBwdLt);
+    document.getElementById("btnBwdRt").addEventListener(
+        "mousedown", fcnPressedBwdRt);
+    // Button released handling
+    document.getElementById("btnFwd").addEventListener(
+        "mouseup", fcnReleasedBtn);
+    document.getElementById("btnBwd").addEventListener(
+        "mouseup", fcnReleasedBtn);
+    document.getElementById("btnFwdLt").addEventListener(
+        "mouseup", fcnReleasedBtn);
+    document.getElementById("btnFwdRt").addEventListener(
+        "mouseup", fcnReleasedBtn);
+    document.getElementById("btnTnLt").addEventListener(
+        "mouseup", fcnReleasedBtn);
+    document.getElementById("btnTnRt").addEventListener(
+        "mouseup", fcnReleasedBtn);
+    document.getElementById("btnBwdLt").addEventListener(
+        "mouseup", fcnReleasedBtn);
+    document.getElementById("btnBwdRt").addEventListener(
+        "mouseup", fcnReleasedBtn);
+    // Button clicked handling
+    document.getElementById("btnFst").addEventListener(
+        "click", fcnFasterBtn);
+    document.getElementById("btnSlw").addEventListener(
+        "click", fcnSlowerBtn);
+    document.getElementById("btnInit").addEventListener(
+        "click", run);
 
     var twist = [];
     var twistXValue = 0.5;
@@ -156,9 +167,8 @@
         }
       });
 
-      // --- Setup default liear and angular speed
-      twistXValue = 0.5;
-      twistZValue = 1;
+      // --- Setup default linear and angular speed
+
       document.getElementById("speedIndicator").innerHTML
           = "Current speed: "
             +twistXValue+" (linear), "+twistZValue+" (angular).";
@@ -171,27 +181,51 @@
     }
 
     // --- Change the twist message fields depending on the button pressed
-    function fcnPressedUp() {
+    function fcnPressedFwd() {
       twist.linear.x = twistXValue;
       document.getElementById("statusIndicator").innerHTML
           = "Moving forward...";
     }
-    function fcnPressedDn() {
+    function fcnPressedBwd() {
       twist.linear.x = -twistXValue;
       document.getElementById("statusIndicator").innerHTML
           = "Moving backward...";
     }
-    function fcnPressedLt() {
+    function fcnPressedFwdLt() {
       twist.linear.x = twistXValue;
+      twist.angular.z = twistZValue/4;
+      document.getElementById("statusIndicator").innerHTML
+          = "Moving forward-left...";
+    }
+    function fcnPressedFwdRt() {
+      twist.linear.x = twistXValue;
+      twist.angular.z = -twistZValue/4;
+      document.getElementById("statusIndicator").innerHTML
+          = "Moving forward-right...";
+    }
+    function fcnPressedTnLt() {
+      twist.linear.x = 0;
       twist.angular.z = twistZValue;
       document.getElementById("statusIndicator").innerHTML
           = "Turning left...";
     }
-    function fcnPressedRt() {
-      twist.linear.x = twistXValue;
+    function fcnPressedTnRt() {
+      twist.linear.x = 0;
       twist.angular.z = -twistZValue;
       document.getElementById("statusIndicator").innerHTML
           = "Turning right...";
+    }
+    function fcnPressedBwdLt() {
+      twist.linear.x = -twistXValue;
+      twist.angular.z = -twistZValue/4;
+      document.getElementById("statusIndicator").innerHTML
+          = "Moving forward-left...";
+    }
+    function fcnPressedBwdRt() {
+      twist.linear.x = -twistXValue;
+      twist.angular.z = twistZValue/4;
+      document.getElementById("statusIndicator").innerHTML
+          = "Moving forward-right...";
     }
     function fcnReleasedBtn() {
       twist.linear.x = 0;
