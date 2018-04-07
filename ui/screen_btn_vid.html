@@ -34,7 +34,7 @@
       }
     </style>
   </header>
-  <body id="char">
+  <body>
     <h1>Keyboard teleoperation of a mobile robot.</h1>
     <div class="container">
       <div class="item">
@@ -45,15 +45,38 @@
           </form>
           <button id="btnInit">INIT</button>
           <br>
+          <table>
+            <tr>
+              <th></th>
+              <th><button id="btnFwd">FORWARD</button></th>
+              <th></th>
+            </tr>
+            <tr>
+              <th><button id="btnFwdLt">FWD LEFT</button></th>
+              <th></th>
+              <th><button id="btnFwdRt">FWD RIGHT</button></th>
+            </tr>
+            <tr>
+              <th><button id="btnTnLt">TURN LEFT</button></th>
+              <th></th>
+              <th><button id="btnTnRt">TURN RIGHT</button></th>
+            </tr>
+            <tr>
+              <th><button id="btnBwdLt">BWD LEFT</button></th>
+              <th></th>
+              <th><button id="btnBwdRt">BWD RIGHT</button></th>
+            </tr>
+            <tr>
+              <th></th>
+              <th><button id="btnBwd">BACKWARD</button></th>
+              <th></th>
+            </tr>
+          </table>
+          <br>
           <button id="btnFst">FASTER</button>
           <button id="btnSlw">SLOWER</button>
-          <br>
-          Log: <p id="log"></p>
-          <br>
           <div id="speedIndicator">
           </div>
-          <br>
-          ROS status:
           <div id="connectionIndicator">
             <p id="connecting">
               Connecting to rosbridge...
@@ -68,6 +91,10 @@
               Connection closed.
             </p>
           </div>
+          <br>
+          Log: <pre id="log"></pre><!-- style="border: 1px solid #ccc;"-->
+          <div id="log">
+          </div>
         </div>
       </div>
       <div class="item">
@@ -78,36 +105,50 @@
       </div>
     </div>
   </body>
+  <script type="text/javascript"
+      src="https://static.robotwebtools.org/EventEmitter2/current/eventemitter2.min.js"></script>
+  <script type="text/javascript"
+      src="https://static.robotwebtools.org/roslibjs/current/roslib.min.js"></script>
 
-  <script type="text/javascript"
-      src="https://static.robotwebtools.org/EventEmitter2/current/eventemitter2.min.js">
-  </script>
-  <script type="text/javascript"
-      src="https://static.robotwebtools.org/roslibjs/current/roslib.min.js">
-  </script>
   <script type="text/javascript" src="../lib/mjpegcanvas.js"></script>
-  <!--<script type="text/javascript"
-      src="https://static.robotwebtools.org/mjpegcanvasjs/current/mjpegcanvas.min.js">
-  </script>-->
-  <!--<script type="text/javascript" src="../lib/eventemitter2.js"></script>
-  <script type="text/javascript" src="../lib/roslib.min.js"></script>-->
 
   <script type="text/javascript" type="text/javascript">
-    const KEY_UP = "26";
-    const KEY_DN = "28";
-    const KEY_LT = "25";
-    const KEY_RT = "27";
-    const KEY_FT = "57";
-    const KEY_SR = "53";
 
-    var keydownEvents = [];
-    var twist = [];
-    var twistXValue = 0.5;
-    var twistZValue = 4;
-    var charfield = document.getElementById("char");
-    charfield.addEventListener('keydown', handleKeydown, false);
-    charfield.addEventListener('keyup', handleKeyup, false);
-
+    // Button pressed handling
+    document.getElementById("btnFwd").addEventListener(
+        "mousedown",fcnPressedFwd);
+    document.getElementById("btnBwd").addEventListener(
+        "mousedown", fcnPressedBwd);
+    document.getElementById("btnFwdLt").addEventListener(
+        "mousedown",fcnPressedFwdLt);
+    document.getElementById("btnFwdRt").addEventListener(
+        "mousedown", fcnPressedFwdRt);
+    document.getElementById("btnTnLt").addEventListener(
+        "mousedown",fcnPressedTnLt);
+    document.getElementById("btnTnRt").addEventListener(
+        "mousedown", fcnPressedTnRt);
+    document.getElementById("btnBwdLt").addEventListener(
+        "mousedown",fcnPressedBwdLt);
+    document.getElementById("btnBwdRt").addEventListener(
+        "mousedown", fcnPressedBwdRt);
+    // Button released handling
+    document.getElementById("btnFwd").addEventListener(
+        "mouseup", fcnReleasedBtn);
+    document.getElementById("btnBwd").addEventListener(
+        "mouseup", fcnReleasedBtn);
+    document.getElementById("btnFwdLt").addEventListener(
+        "mouseup", fcnReleasedBtn);
+    document.getElementById("btnFwdRt").addEventListener(
+        "mouseup", fcnReleasedBtn);
+    document.getElementById("btnTnLt").addEventListener(
+        "mouseup", fcnReleasedBtn);
+    document.getElementById("btnTnRt").addEventListener(
+        "mouseup", fcnReleasedBtn);
+    document.getElementById("btnBwdLt").addEventListener(
+        "mouseup", fcnReleasedBtn);
+    document.getElementById("btnBwdRt").addEventListener(
+        "mouseup", fcnReleasedBtn);
+    // Button clicked handling
     document.getElementById("btnFst").addEventListener(
         "click", fcnFasterBtn);
     document.getElementById("btnSlw").addEventListener(
@@ -115,8 +156,12 @@
     document.getElementById("btnInit").addEventListener(
         "click", run);
 
+    var twist = [];
+    var twistXValue = 0.5;
+    var twistZValue = 4;
+
     function run(){
-      // Create the main viewer.
+      // --- Create the video stream
       var viewer = new MJPEGCANVAS.Viewer({
         divID : 'mjpeg',
         host : document.getElementById('textIp').value,
@@ -165,7 +210,7 @@
         name : '/cmd_vel',
         messageType : 'geometry_msgs/Twist'
       });
-
+      // --- Below is an example for pressing the "up" button
       twist = new ROSLIB.Message({
         linear : {
           x : 0,
@@ -179,7 +224,8 @@
         }
       });
 
-      // --- Setup default liear and angular speed
+      // --- Setup default linear and angular speed
+
       document.getElementById("speedIndicator").innerHTML
           = "Current speed: "
             +twistXValue+" (linear), "+twistZValue+" (angular).";
@@ -188,45 +234,62 @@
       var tid = setInterval(publishTwistMsg, 50);
       function publishTwistMsg(){
         cmdVel.publish(twist);
-        console.log("\nMsg published.");
       }
     }
 
-    function handleKeydown(event){
-      //var pressedKey = parseInt(event.keyCode, 16);
-      var pressedKey = event.keyCode.toString(16);
-      keydownEvents.push(pressedKey);
-      if (keydownEvents.length == 1){
-        if (pressedKey == KEY_UP) {
-          twist.linear.x = twistXValue;
-          log("Moving forward...");
-        }
-        if (pressedKey == KEY_DN) {
-          twist.linear.x = -twistXValue;
-          log("Moving backward...");
-        }
-        if (pressedKey == KEY_LT) {
-          //twist.linear.x = twistXValue;
-          twist.angular.z = twistZValue;
-          log("Turning left...");
-        }
-        if (pressedKey == KEY_RT) {
-          //twist.linear.x = twistXValue;
-          twist.angular.z = -twistZValue;
-          log("Turning right...");
-        }
-      }
+    // --- Change the twist message fields depending on the button pressed
+    function fcnPressedFwd() {
+      twist.linear.x = twistXValue;
+      document.getElementById("statusIndicator").innerHTML
+          = "Moving forward...";
     }
-    function handleKeyup(event){
-      var releasedKey = event.keyCode.toString(16);
-      if (releasedKey == keydownEvents[0]){
-        twist.linear.x = 0;
-        twist.angular.z = 0;
-        keydownEvents.splice(0, keydownEvents.length);
-        log("STOP");
-      }
+    function fcnPressedBwd() {
+      twist.linear.x = -twistXValue;
+      document.getElementById("statusIndicator").innerHTML
+          = "Moving backward...";
     }
-
+    function fcnPressedFwdLt() {
+      twist.linear.x = twistXValue;
+      twist.angular.z = twistZValue/4;
+      document.getElementById("statusIndicator").innerHTML
+          = "Moving forward-left...";
+    }
+    function fcnPressedFwdRt() {
+      twist.linear.x = twistXValue;
+      twist.angular.z = -twistZValue/4;
+      document.getElementById("statusIndicator").innerHTML
+          = "Moving forward-right...";
+    }
+    function fcnPressedTnLt() {
+      twist.linear.x = 0;
+      twist.angular.z = twistZValue;
+      document.getElementById("statusIndicator").innerHTML
+          = "Turning left...";
+    }
+    function fcnPressedTnRt() {
+      twist.linear.x = 0;
+      twist.angular.z = -twistZValue;
+      document.getElementById("statusIndicator").innerHTML
+          = "Turning right...";
+    }
+    function fcnPressedBwdLt() {
+      twist.linear.x = -twistXValue;
+      twist.angular.z = -twistZValue/4;
+      document.getElementById("statusIndicator").innerHTML
+          = "Moving forward-left...";
+    }
+    function fcnPressedBwdRt() {
+      twist.linear.x = -twistXValue;
+      twist.angular.z = twistZValue/4;
+      document.getElementById("statusIndicator").innerHTML
+          = "Moving forward-right...";
+    }
+    function fcnReleasedBtn() {
+      twist.linear.x = 0;
+      twist.angular.z = 0;
+      document.getElementById("statusIndicator").innerHTML
+          = "STOP";
+    }
     function fcnFasterBtn() {
       twistXValue = twistXValue*1.1;
       twistZValue = twistZValue*1.1;
@@ -243,10 +306,10 @@
             +twistXValue.toFixed(2)+" (linear), "
             +twistZValue.toFixed(2)+" (angular).";
     }
+    // Will the twist message be sent constantly (e.g. same message in loop)?
     function log(msg) {
       var p = document.getElementById('log');
-      //p.innerHTML = msg + "\n" + p.innerHTML;
-      p.innerHTML = msg;
+        p.innerHTML = msg + "\n" + p.innerHTML;
     }
   </script>
 </html>

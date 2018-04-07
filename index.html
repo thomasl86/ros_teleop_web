@@ -18,22 +18,28 @@
         }
         console.log('Query variable \'%s\' not found', variable);
       }
-
+      var win_loc_st = 'ui/';
       if (isMobile.any()){
-        window.location="ui/touch.html";
+        win_loc_st = win_loc_st + 'touch';
       }
       else {
         // TODO make choice of screen_kb or screen_kb_vid via query string
+        win_loc_st = win_loc_st + 'screen';
         if (getQueryVariable('method')=='btn') {
-          window.location="ui/screen_btn.html";
+          win_loc_st = win_loc_st + '_btn';
         }
         else if (getQueryVariable('method')=='kb') {
-          window.location="ui/screen_kb_vid.html";
+          win_loc_st = win_loc_st + '_kb';
         }
         else {
-          window.location="ui/screen_btn.html";
+          win_loc_st = win_loc_st + '_btn';
         }
       }
+      if (getQueryVariable('vid')=='true') {
+        win_loc_st = win_loc_st + '_vid';
+      }
+      win_loc_st = win_loc_st + '.html';
+      window.location=win_loc_st;
     </script>
   </head>
 </html>
